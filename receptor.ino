@@ -3,7 +3,7 @@
 
 SoftwareSerial mySerial(10, 11); // RX, TX
 LiquidCrystal lcd(12, 11, 5, 4, 3, 2);
-
+//Little change
 void setup() {
   Serial.begin(9600);  // Configura la velocidad de transmisión inicial (modificar según las pruebas)
   mySerial.begin(9600);
