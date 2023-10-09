@@ -1,13 +1,18 @@
 #include <SoftwareSerial.h>
-#include <iostream>
-#include <cstdint>
+#include <LiquidCrystal.h>
+#include <stdint.h>
 
 SoftwareSerial mySerial(10, 11); // RX, TX
+uint8_t datos[1];                // Initialized variable to store recieved data
+char display[1];
+const int rs = 12, en = 11, d4 = 5, d5 = 4, d6 = 3, d7 = 2;
+LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
 
 uint16_t calculateCRC(uint8_t *datos, size_t longitud);
 
 void setup()
 {
+  lcd.begin(16, 2);
   Serial.begin(9600); // Configura la velocidad de transmisión inicial (modificar según las pruebas)
   mySerial.begin(9600);
 }
@@ -17,9 +22,24 @@ void loop()
   uint8_t datos[] = {0xAA};                                  // Datos a enviar (simulados)
   uint16_t resultadoCRC = calcularCRC(datos, sizeof(datos)); // Aquí se debe implementar la función para calcular CRC
 
-  mySerial.write(datos);
-  mySerial.write(resultadoCRC);
-  delay(1000); // Espera un segundo
+  Serial.readBytes(datos, 1); // Read the serial data and store in var
+  // Serial.print(datos); //Print data on Serial Monitor
+  Serial.print(datos[0]);
+  delay(1000);
+  if (Serial.available())
+  {
+    // wait a bit for the entire message to arrive
+    delay(100);
+    // clear the screen
+    lcd.clear();
+    sprintf(display, " %02x", datos[0]);
+    // read all the available characters
+    while (Serial.available() > 0)
+    {
+      // display each character to the LCD
+      lcd.write(display);
+    }
+  }
 }
 
 /*
