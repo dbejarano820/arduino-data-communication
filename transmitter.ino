@@ -8,7 +8,43 @@ char display[1];
 const int rs = 12, en = 11, d4 = 5, d5 = 4, d6 = 3, d7 = 2;
 LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
 
+const uint8_t DEFAULT_FLAG = 0x7E; // 01111110 en binario
+
 uint16_t calculateCRC(uint8_t *datos, size_t longitud);
+
+uint8_t* buildFrameA(uint8_t type, uint16_t speed, uint16_t dataSize) {
+  static uint8_t frameA[9]; // Estático para preservar el valor entre llamadas
+  
+  tramaA[0] = DEFAULT_FLAG;
+  tramaA[1] = type;
+  tramaA[2] = speed >> 8;   // byte alto de velocidad
+  tramaA[3] = speed & 0xFF; // byte bajo de velocidad
+  tramaA[4] = dataSize >> 8;   // byte alto de tamaño
+  tramaA[5] = dataSize & 0xFF; // byte bajo de tamaño
+  
+  uint16_t crc = calculateCRC(frameA + 1, 5); // Calcula el CRC de los datos en la trama (sin incluir banderas)
+  tramaA[6] = crc >> 8;   // byte alto de CRC
+  tramaA[7] = crc & 0xFF; // byte bajo de CRC
+  tramaA[8] = DEFAULT_FLAG;
+
+  return frameA;
+}
+
+uint8_t* buildFrameB(uint8_t NS, uint8_t type, uint8_t* information) {
+  static uint8_t frameB[205];
+
+  frameB[0] = DEFAULT_FLAG;
+  frameB[1] = (NS << 3) | type; // Desplaza NS 3 bits a la izquierda y OR con tipo
+  memcpy(tramaB + 2, information, 200); // Copia 200 bytes de información
+  
+  uint16_t crc = calculateCRC(frameB + 1, 202); // Calcula el CRC de los datos en la trama (sin incluir banderas)
+  frameB[202] = crc >> 8;   // byte alto de CRC
+  frameB[203] = crc & 0xFF; // byte bajo de CRC
+  frameB[204] = DEFAULT_FLAG;
+
+  return frameB;
+}
+
 
 void setup()
 {
