@@ -10,11 +10,10 @@ void processFrameA(uint8_t *trama);
 void processFrameB(uint8_t *trama);
 void acknowledgeFrame(uint8_t NS);
 
-int speed = 0;
+int speed = 100;
 
 void setup()
 {
-  speed = 360;
   Serial.begin(speed); // Configura la velocidad de transmisión inicial (modificar según las pruebas)
   mySerial.begin(speed);
   lcd.begin(16, 2); // inicializa el LCD
@@ -40,15 +39,15 @@ void loop()
       case 0x04: // Trama de control para finalización
         uint8_t frameA[9];
         frameA[0] = DEFAULT_FLAG;
-        frameA[1] = tipo;
+        frameA[1] = type;
         mySerial.readBytes(frameA + 2, 7); // Lee el resto de la trama
         processFrameA(frameA);
         break;
 
       case 0x01: // Trama de información
         uint8_t frameB[205];
-        frameB[0] = BANDERA;
-        frameB[1] = tipo;
+        frameB[0] = DEFAULT_FLAG;
+        frameB[1] = type;
         mySerial.readBytes(frameB + 2, 203); // Lee el resto de la trama
         processFrameB(frameB);
         break;
