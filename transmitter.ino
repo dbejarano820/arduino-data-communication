@@ -15,7 +15,7 @@ const int speed = 100;
 const int payloadSize = 100;
 bool first_transmission = true;
 uint8_t data[payloadSize];
-enum
+enum : uint8_t
 {
   initialHandshake = 0b000,
   infoFrame = 0b001,
