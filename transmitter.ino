@@ -163,14 +163,14 @@ void loop()
       // Envío primera comunicación
       if (first_transmission)
       {
-        *frameA = buildFrameA(initialHandshake, (uint16_t)speed, (uint16_t)payloadSize);
+        frameA = buildFrameA(initialHandshake, (uint16_t)speed, (uint16_t)payloadSize);
         sendFrame(frameA, 0);
         first_transmission = false;
       }
       // Envío comunicación no inicial
       else
       {
-        *frameA = buildFrameA(nonnitialHandshake, (uint16_t)speed, (uint16_t)payloadSize);
+        frameA = buildFrameA(nonnitialHandshake, (uint16_t)speed, (uint16_t)payloadSize);
         sendFrame(frameA, 0);
       }
 
@@ -183,15 +183,15 @@ void loop()
       bytesCopied += copySize;
 
       // Envío trama B
-      *frameB = buildFrameB(NS, infoFrame, data + bytesCopied);
+      frameB = buildFrameB(NS, infoFrame, data + bytesCopied);
       sendFrame(frameB, NS);
       // Envío trama A (Faltan más comunicaciones en la prueba)
-      *frameA = buildFrameA(endCurrentComm, (uint16_t)speed, (uint16_t)payloadSize);
+      frameA = buildFrameA(endCurrentComm, (uint16_t)speed, (uint16_t)payloadSize);
       sendFrame(frameA, 0);
     }
     first_transmission = true;
   }
   // Envío trama A (Fin total de la comunicación)
-  *frameA = buildFrameA(finalComm, (uint16_t)speed, (uint16_t)payloadSize);
+  frameA = buildFrameA(finalComm, (uint16_t)speed, (uint16_t)payloadSize);
   sendFrame(frameA, 0);
 }
