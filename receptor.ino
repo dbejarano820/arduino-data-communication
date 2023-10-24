@@ -12,7 +12,7 @@ void acknowledgeFrame(uint8_t NS);
 
 int speed = 300;
 uint8_t buffer[MAX_FRAME_SIZE];
-uint8_t  frameIndex = 0;
+uint8_t frameIndex = 0;
 bool readingFrame = false;
 
 void setup()
@@ -34,10 +34,10 @@ void loop()
     {
       if (readingFrame)
       {
-        //Nueva bandera de entrada, fin de trama
+        // Nueva bandera de entrada, fin de trama
         readingFrame = false;
-        //Procesar trama
-        for(int i = 0; i < frameIndex; i++)
+        // Procesar trama
+        for (int i = 0; i < frameIndex; i++)
         {
           Serial.print(buffer[i]);
           Serial.println("");
@@ -48,7 +48,7 @@ void loop()
       {
         readingFrame = true;
       }
-    } 
+    }
     else
     {
       if (readingFrame && frameIndex < MAX_FRAME_SIZE)
@@ -64,37 +64,37 @@ void loop()
     //   uint8_t type = Serial.read();
     //   Serial.print(secondByte);
     //   Serial.print(type);
-      //Serial.readBytes(1);// & 0x07; // Extrae los 3 bits menos significativos para determinar el tip
+    // Serial.readBytes(1);// & 0x07; // Extrae los 3 bits menos significativos para determinar el tip
 
-//      switch (type)
-//      {
-//      case 0x00: // Trama de control para inicio
-//      case 0x03: // Trama de control para inicio (no primera)
-//      case 0x04: // Trama de control para finalización
-//        uint8_t frameA[9];
-//        frameA[0] = DEFAULT_FLAG;
-//        frameA[1] = type;
-//        Serial.readBytes(frameA + 2, 7); // Lee el resto de la trama
-//        processFrameA(frameA);
-//        break;
-//
-//      case 0x01: // Trama de información
-//        uint8_t frameB[205];
-//        frameB[0] = DEFAULT_FLAG;
-//        frameB[1] = type;
-//        Serial.readBytes(frameB + 2, 203); // Lee el resto de la trama
-//        processFrameB(frameB);
-//        break;
-//
-//        // Agregar otros tipos si es necesario
-//      }
-    }
-//
-//    lcd.clear();
-//    lcd.print("Prueba Finalizada!");
-//    lcd.setCursor(0, 1);
-//    lcd.print("BER: XX.xx %"); // Mostrar el BER calculado
-//  }
+    //      switch (type)
+    //      {
+    //      case 0x00: // Trama de control para inicio
+    //      case 0x03: // Trama de control para inicio (no primera)
+    //      case 0x04: // Trama de control para finalización
+    //        uint8_t frameA[9];
+    //        frameA[0] = DEFAULT_FLAG;
+    //        frameA[1] = type;
+    //        Serial.readBytes(frameA + 2, 7); // Lee el resto de la trama
+    //        processFrameA(frameA);
+    //        break;
+    //
+    //      case 0x01: // Trama de información
+    //        uint8_t frameB[205];
+    //        frameB[0] = DEFAULT_FLAG;
+    //        frameB[1] = type;
+    //        Serial.readBytes(frameB + 2, 203); // Lee el resto de la trama
+    //        processFrameB(frameB);
+    //        break;
+    //
+    //        // Agregar otros tipos si es necesario
+    //      }
+  }
+  //
+  //    lcd.clear();
+  //    lcd.print("Prueba Finalizada!");
+  //    lcd.setCursor(0, 1);
+  //    lcd.print("BER: XX.xx %"); // Mostrar el BER calculado
+  //  }
 }
 
 void processFrameA(uint8_t *frame)
@@ -122,5 +122,5 @@ void processFrameB(uint8_t *frame)
 void acknowledgeFrame(uint8_t NS)
 {
   uint8_t frameACK[3] = {DEFAULT_FLAG, (NS << 3) | 0x05, DEFAULT_FLAG}; // Construye la trama ACK
-  //Serial.write(frameACK, sizeof(frameACK));
+  // Serial.write(frameACK, sizeof(frameACK));
 }

@@ -94,13 +94,14 @@ uint8_t *buildFrameB(uint8_t NS, uint8_t type, uint8_t *information)
   return frameB;
 }
 
+// Missing acknowledge logic
 void sendFrame(uint8_t *frame, uint8_t NS, int frameType)
 {
   delay(5000);
   if (frameType == -1)
   {
 
-    for(int i = 0; i < frameASize; i++)
+    for (int i = 0; i < frameASize; i++)
     {
       Serial.write(*frame);
       delay(50);
@@ -109,14 +110,14 @@ void sendFrame(uint8_t *frame, uint8_t NS, int frameType)
   }
   else
   {
-    for(int i = 0; i < frameBSize; i++)
+    for (int i = 0; i < frameBSize; i++)
     {
-      //Serial.print(frame[i], DEC);
-      //Serial.print("\n");
-      //Serial.write(frame[i]);
+      Serial.write(*frame);
+      delay(50);
+      frame++;
     }
   }
- // Serial.println("\nDone\n");
+  // Serial.println("\nDone\n");
 }
 
 bool acked(uint8_t NS)
@@ -177,16 +178,16 @@ void loop()
       // Envío primera comunicación
       if (first_transmission)
       {
-       // Serial.println("First A transmission");
+        // Serial.println("First A transmission");
         frameA = buildFrameA(initialHandshake, (uint16_t)speed, (uint16_t)payloadSize);
-        Serial.print(frameA[0],BIN);
+        Serial.print(frameA[0], BIN);
         sendFrame(frameA, NS, -1);
         first_transmission = false;
       }
       // Envío comunicación no inicial
       else
       {
-        //Serial.println("Non initial A transmission");
+        // Serial.println("Non initial A transmission");
         frameA = buildFrameA(nonnitialHandshake, (uint16_t)speed, (uint16_t)payloadSize);
         sendFrame(frameA, NS, -1);
       }
@@ -200,24 +201,24 @@ void loop()
       bytesCopied += copySize;
 
       // Envío trama B
-      //Serial.println("\nB transmission");
+      // Serial.println("\nB transmission");
       frameB = buildFrameB(NS, infoFrame, data + bytesCopied);
       sendFrame(frameB, NS, 0);
       // Envío trama A (Faltan más comunicaciones en la prueba)
-      //Serial.println("\nlast comm for this test A transmission");
+      // Serial.println("\nlast comm for this test A transmission");
       frameA = buildFrameA(endCurrentComm, (uint16_t)speed, (uint16_t)payloadSize);
       sendFrame(frameA, NS, -1);
-      //Serial.print("\n");
+      // Serial.print("\n");
     }
-    //Serial.println("This test is complete");
+    // Serial.println("This test is complete");
     first_transmission = true;
   }
   // Envío trama A (Fin total de la comunicación)
-  //Serial.print("\n");
- // Serial.println("Last A transmission");
+  // Serial.print("\n");
+  // Serial.println("Last A transmission");
   frameA = buildFrameA(finalComm, (uint16_t)speed, (uint16_t)payloadSize);
   sendFrame(frameA, 0, -1);
-  //Serial.println("\nDone testing");
+  // Serial.println("\nDone testing");
   while (true)
   {
   }
