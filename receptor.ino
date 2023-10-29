@@ -4,16 +4,28 @@
 SoftwareSerial mySerial(10, 11);  // RX, TX
 LiquidCrystal lcd(12, 11, 5, 4, 3, 2);
 
+
 const uint8_t DEFAULT_FLAG = 0x7E;  // 01111110 en binario
+enum : uint8_t {
+  initialHandshake = 0b000,
+  infoFrame = 0b001,
+  endCurrentComm = 0b010,
+  nonInitialHandshake = 0b011,
+  finalComm = 0b100,
+  ack = 0b101
+};
+static int totalComms = 0;
+static int failedComms = 0;
+static int BER = 0;
+int speed = 300;
+uint8_t buffer[MAX_FRAME_SIZE];
+uint8_t frameIndex = 0;
+bool readingFrame = false;
 
 void processFrameA(uint8_t *trama);
 void processFrameB(uint8_t *trama);
 void acknowledgeFrame(uint8_t NS);
 
-int speed = 300;
-uint8_t buffer[MAX_FRAME_SIZE];
-uint8_t frameIndex = 0;
-bool readingFrame = false;
 
 void setup() {
   Serial.begin(speed);  // Configura la velocidad de transmisión inicial (modificar según las pruebas)
@@ -23,6 +35,8 @@ void setup() {
 }
 
 void loop() {
+  uint8_t *frameA;
+  uint8_t *frameB;
   while (Serial.available() > 0) {
     lcd.clear();
     lcd.print("Prueba en curso!");
@@ -31,18 +45,9 @@ void loop() {
       if (readingFrame) {
         // Nueva bandera de entrada, fin de trama
         readingFrame = false;
-        //if (frameIndex == 7){processFrameA(buffer[MAX_FRAME_SIZE]);}
-        //if (frameIndex == 203){processFrameB(buffer[MAX_FRAME_SIZE]);}
-        Serial.print("\nframeIndex =");
-        Serial.println(frameIndex);
+        if (frameIndex == 7) { processFrameA(buffer, frameIndex); }
+        if (frameIndex == 203 || frameIndex == 103) { processFrameB(buffer, frameIndex); }
         // Procesar trama
-        // Serial.println(DEFAULT_FLAG);
-        // for (int i = 0; i < frameIndex; i++)
-        // {
-        //   Serial.print(buffer[i]);
-        //   Serial.println("");
-        // }
-        // Serial.println(DEFAULT_FLAG);
         frameIndex = 0;
       } else {
         readingFrame = true;
@@ -53,102 +58,133 @@ void loop() {
         frameIndex++;
       }
     }
-
-    // if (firstByte == DEFAULT_FLAG)
-    // {
-    //   Serial.println("Message begin");
-    //   uint8_t type = Serial.read();
-    //   Serial.print(secondByte);
-    //   Serial.print(type);
-    // Serial.readBytes(1);// & 0x07; // Extrae los 3 bits menos significativos para determinar el tip
-
-    //      switch (type)
-    //      {
-    //      case 0x00: // Trama de control para inicio
-    //      case 0x03: // Trama de control para inicio (no primera)
-    //      case 0x04: // Trama de control para finalización
-    //        uint8_t frameA[9];
-    //        frameA[0] = DEFAULT_FLAG;
-    //        frameA[1] = type;
-    //        Serial.readBytes(frameA + 2, 7); // Lee el resto de la trama
-    //        processFrameA(frameA);
-    //        break;
-    //
-    //      case 0x01: // Trama de información
-    //        uint8_t frameB[205];
-    //        frameB[0] = DEFAULT_FLAG;
-    //        frameB[1] = type;
-    //        Serial.readBytes(frameB + 2, 203); // Lee el resto de la trama
-    //        processFrameB(frameB);
-    //        break;
-    //
-    //        // Agregar otros tipos si es necesario
-    //      }
   }
-  //
-  //    lcd.clear();
-  //    lcd.print("Prueba Finalizada!");
-  //    lcd.setCursor(0, 1);
-  //    lcd.print("BER: XX.xx %"); // Mostrar el BER calculado
-  //  }
 }
 
-bool isValidFrame(uint8_t frame[MAX_FRAME_SIZE], uint16_t crc_high, uint16_t crc_low) {
+bool isValidFrame(uint8_t frame[MAX_FRAME_SIZE], uint16_t crc_high, uint16_t crc_low, int frameIndex) {
   // Valida la trama haciendo la comparacion de CRC
   Serial.print("\ncrc_high =");
   Serial.println(crc_high);
   Serial.print("\ncrc_low =");
   Serial.println(crc_low);
-  Serial.print("\nframe[5] =");
-  Serial.println(frame[5]);
-  Serial.print("\nframe[6] =");
-  Serial.println(frame[6]);
-  if (frame[5] == crc_high && frame[6] == crc_low) {
-    Serial.println("Yes, is Valid");
-    return true;
-  } else {
-    Serial.println("Nope!");
-    return false;
+  if (frameIndex == 7) {
+    // Serial.print("\nframe[5] =");
+    // Serial.println(frame[5]);
+    // Serial.print("\nframe[6] =");
+    // Serial.println(frame[6]);
+    if (frame[5] == crc_high && frame[6] == crc_low) {
+      Serial.println("Yes, is Valid");
+      return true;
+    } else {
+      Serial.println("Nope!");
+      return false;
+    }
+  } else if (frameIndex == 103) {
+    // Serial.print("\nframe[101] =");
+    // Serial.println(frame[101]);
+    // Serial.print("\nframe[102] =");
+    // Serial.println(frame[102]);
+    if (frame[101] == crc_high && frame[102] == crc_low) {
+      Serial.println("Yes, is Valid");
+      return true;
+    } else {
+      Serial.println("Nope!");
+      return false;
+    }
+  } else if (frameIndex == 203) {
+    // Serial.print("\nframe[201] =");
+    // Serial.println(frame[201]);
+    // Serial.print("\nframe[202] =");
+    // Serial.println(frame[202]);
+    if (frame[201] == crc_high && frame[202] == crc_low) {
+      Serial.println("Yes, is Valid");
+      return true;
+    } else {
+      Serial.println("Nope!");
+      return false;
+    }
   }
 }
 
-void processFrameA(uint8_t frame[MAX_FRAME_SIZE]) {
+void processFrameA(uint8_t frame[MAX_FRAME_SIZE], int frameIndex) {
   // Procesa la trama de tipo A (inicio/finalización)
   // Extrae y procesa la velocidad, tamaño de datos, etc.
-
-  uint16_t crc = calculateCRC(frame + 1, 5);
+  uint16_t crc = calculateCRC(frame, 5);
   uint16_t crc_high = crc >> 8;   // byte alto de CRC
   uint16_t crc_low = crc & 0xFF;  // byte bajo de CRC
-  bool ValidateFrame = isValidFrame(frame, crc_high, crc_low);
+  uint8_t type = frame[0];
+  bool ValidateFrame = isValidFrame(frame, crc_high, crc_low, frameIndex);
+  totalComms += 1;
 
-  // Por ahora, solo muestra un mensaje en el LCD
+  if (!ValidateFrame) {
+    failedComms += 1;
+  } else {
+    acknowledgeFrame(0);
+  }
   lcd.clear();
   lcd.print("Trama A recibida");
+  if (type == finalComm) {
+    BER = (failedComms * 100) / totalComms;
+    lcd.clear();
+    lcd.print("Prueba Finalizada!");
+    delay(1000);
+    lcd.setCursor(0, 1);
+    lcd.print("BER: ");  // Mostrar el BER calculado
+    lcd.print(BER);
+    lcd.print("%");
+    Serial.print("BER: ");
+    Serial.print(BER);
+    Serial.print("%\n");
+    delay(2000);
+  }
 }
 
+void processFrameB(uint8_t frame[MAX_FRAME_SIZE], int frameIndex) {
+  uint8_t type = frame[0];
+  uint16_t crc;
+  uint16_t crc_high;  // byte alto de CRC
+  uint16_t crc_low;   // byte bajo de CRC
+  bool ValidateFrame;
+  Serial.println("Frame B");
+  if (frameIndex == 103) {
+    uint16_t crc = calculateCRC(frame, 101);
+    uint16_t crc_high = crc >> 8;   // byte alto de CRC
+    uint16_t crc_low = crc & 0xFF;  // byte bajo de CRC
+    ValidateFrame = isValidFrame(frame, crc_high, crc_low, frameIndex);
+  }
+  if (frameIndex == 203) {
+    // Procesa la trama de tipo B (información)
+    Serial.println("203 index");
+    uint16_t crc = calculateCRC(frame, 201);
 
-void processFrameB(uint8_t *frame) {
-  // Procesa la trama de tipo B (información)
+    uint16_t crc_high = crc >> 8;   // byte alto de CRC
+    uint16_t crc_low = crc & 0xFF;  // byte bajo de CRC
+    ValidateFrame = isValidFrame(frame, crc_high, crc_low, frameIndex);
+  }
+  totalComms += 1;
+
+  if (!ValidateFrame) {
+    failedComms += 1;
+  } else {
+    acknowledgeFrame(type);
+  }
 
   // Por ahora, solo muestra un mensaje en el LCD
   lcd.clear();
   lcd.print("Trama B recibida");
-
-  uint8_t NS = frame[1] >> 3;  // Extrae el número de secuencia
-  acknowledgeFrame(NS);
 }
 
 void acknowledgeFrame(uint8_t NS) {
   uint8_t frameACK[3] = { DEFAULT_FLAG, (NS << 3) | 0x05, DEFAULT_FLAG };  // Construye la trama ACK
-  // Serial.write(frameACK, sizeof(frameACK));
+  Serial.write(frameACK, sizeof(frameACK));
 }
 
-
 //Calculamos en CRC desde el Receptor
-uint16_t calculateCRC(uint8_t *data, size_t longitud) {
+uint16_t calculateCRC(uint8_t data[MAX_FRAME_SIZE], size_t longitud) {
   uint16_t crc = 0xFFFF;  // Valor inicial del CRC
 
   for (size_t i = 0; i < longitud; ++i) {
+
     crc ^= data[i];  // Realiza la operación XOR con el byte actual
 
     // Realiza el cálculo para cada bit del byte
