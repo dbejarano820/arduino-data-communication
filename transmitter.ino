@@ -12,6 +12,7 @@ const uint8_t DEFAULT_FLAG = 0x7E; // 01111110 en binario
 const uint8_t ESCAPE_FLAG = 0xAA;  // Para byte stuffing
 const uint16_t speed = 300;
 const uint16_t payloadSize = 100;
+int numberOfTests = 2;
 static const size_t frameASize = 9;
 static const size_t frameBSize = 205;
 bool first_transmission = true;
@@ -25,7 +26,7 @@ enum : uint8_t
   finalComm = 0b100,
   ack = 0b101
 };
-int numberOfTests = 1;
+
 /*
   Calcula el valor CRC de un conjunto de bits (MODBUS)
   Se usa el tipo de dato uint8_t que es equivalente a un unsigned char (8 bytes) con la

@@ -18,7 +18,7 @@ static int totalComms = 0;
 static int failedComms = 0;
 static int BER = 0;
 int speed = 300;
-int numberOfTests = 1;
+int numberOfTests = 2;
 int testsPerformed = 0;
 uint8_t buffer[MAX_FRAME_SIZE];
 uint8_t frameIndex = 0;
@@ -161,11 +161,10 @@ void processFrameA(uint8_t frame[MAX_FRAME_SIZE], int frameIndex)
   lcd.print("Trama A recibida");
   if (type == finalComm)
   {
-    testsPerformed++;
-  }
-
-  if (testsPerformed == numberOfTests)
-  {
+    lcd.clear();
+    Serial.print("TotalComms: ");
+    Serial.print(totalComms);
+    Serial.print("\n");
     BER = (failedComms * 100) / totalComms;
     lcd.clear();
     lcd.print("Prueba Finalizada!");
